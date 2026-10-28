@@ -1,0 +1,7 @@
+{
+  "name": "firebase-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
