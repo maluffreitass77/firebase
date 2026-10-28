@@ -1,7 +1,6 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
-import { db, storage } from './firebase';
+import { db } from './firebase';
 
 export interface Profile {
   fullName: string;
@@ -11,16 +10,39 @@ export interface Profile {
 }
 
 export async function getProfile(uid: string): Promise<Profile | null> {
-  const snapshot = await getDoc(doc(db, 'profiles', uid));
-  return snapshot.exists() ? (snapshot.data() as Profile) : null;
+  const [profileSnapshot, imageSnapshot] = await Promise.all([
+    getDoc(doc(db, 'profiles', uid)),
+    getDoc(doc(db, 'images', uid)),
+  ]);
+  if (!profileSnapshot.exists()) return null;
+  const profile = profileSnapshot.data() as Profile;
+  const image = imageSnapshot.data()?.image;
+  return { ...profile, photoUrl: typeof image === 'string' ? image : '' };
 }
 
 export async function saveProfile(uid: string, profile: Profile): Promise<void> {
-  await setDoc(doc(db, 'profiles', uid), { ...profile, updatedAt: serverTimestamp() }, { merge: true });
+  const { photoUrl, ...profileData } = profile;
+  await Promise.all([
+    setDoc(doc(db, 'profiles', uid), { ...profileData, updatedAt: serverTimestamp() }, { merge: true }),
+    setDoc(doc(db, 'images', uid), { image: photoUrl, updatedAt: serverTimestamp() }, { merge: true }),
+  ]);
 }
 
-export async function uploadProfilePhoto(uid: string, file: File): Promise<string> {
-  const imageRef = ref(storage, `profile-photos/${uid}/avatar`);
-  await uploadBytes(imageRef, file, { contentType: file.type });
-  return getDownloadURL(imageRef);
+export function readImageAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') {
+        reject(new Error('Não foi possível converter a imagem.'));
+        return;
+      }
+      if (reader.result.length > 900_000) {
+        reject(new Error('A imagem é muito grande. Escolha uma imagem menor.'));
+        return;
+      }
+      resolve(reader.result);
+    };
+    reader.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
+    reader.readAsDataURL(file);
+  });
 }
