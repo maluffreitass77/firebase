@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import type { RouteRecordRaw } from 'vue-router';
 
-import HomePage from '../views/HomePage.vue';
-import LoginPage from '../views/LoginPage.vue';
-import RegisterPage from '../views/RegisterPage.vue';
-import ForgotPasswordPage from '../views/ForgotPasswordPage.vue';
-import ProfilePage from '../views/ProfilePage.vue';
 import { waitForAuthState } from '../services/auth';
 import { auth } from '../services/firebase';
+import ForgotPasswordPage from '../views/ForgotPasswordPage.vue';
+import HomePage from '../views/HomePage.vue';
+import LoginPage from '../views/LoginPage.vue';
+import ProfilePage from '../views/ProfilePage.vue';
+import RegisterPage from '../views/RegisterPage.vue';
 
 const routes: RouteRecordRaw[] = [
   {
